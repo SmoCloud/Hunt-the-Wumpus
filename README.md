@@ -1,6 +1,11 @@
 # Hunt-the-Wumpus
 This repo contains code for the game 'Hunt the Wumpus', written in Go.
 
+# Dependencies
+Note    - To install all dependencies when cloning this project, just run 'go mod tidy' in your terminal from the project's directory (assuming you already have Go installed, if not, why did you clone a Go project?)
+OpenGL  - github.com/go-gl/gl
+GLFW    - github.com/go-gl/glfw
+
 # OpenGL
 A lot of the boilerplate is the same as from Conway's, as that same code is required in each OpenGL project to get a render window up-and-running, so it's honestly just copied over (https://github.com/SmoCloud/Conway-GOL).
 

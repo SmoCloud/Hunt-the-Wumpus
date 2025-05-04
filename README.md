@@ -27,6 +27,10 @@ Note    - To install all dependencies when cloning this project, just run 'go mo
 
 - With an ELEMENT_ARRAY_BUFFER, you can specify the starting and ending vertices, which gives more control and reduces the size of the vertex array object being used, ultimately meaning I will be able to draw the dodecahedron.
 
+- Using gl.LINES combined with an element array that specifies the two vertices of each drawn line, I am able to draw the connected map as it should be.
+
+- The values used for the coordinates were calculated in 0.075 increments. I really just played with them, changing them in those increments, until I got something that resembled what I wanted (a pentagon inside of a decagon inside of a pentagon).
+
 # Design
 - The design of the map came from the image provided under the Development tab on the wikipedia page for Hunt The Wumpus, that shows the different vertices of a dodecahedron as each room (https://en.wikipedia.org/wiki/Hunt_the_Wumpus).
 

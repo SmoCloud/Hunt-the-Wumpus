@@ -36,43 +36,77 @@ const (
 )
 
 var (
-	// pre-defined dodecahedron shape, using lines
+	// Pre-defined dodecahedron shape, using lines
+	// Calculations are based on 0.075 increments
 	Dodecahedron = []float32{
 		// Outer Pentagon points
-		0.0, 1.0, 0.0,			// 1
-		1.0, 0.125, 0.0,		// 2
-		0.5, -1.0, 0.0,			// 3
-		-0.5, -1.0, 0.0,		// 4
-		-1.0, 0.125, 0.0,		// 5
-		0.0, 1.0, 0.0,			// 6
+		0.0, 1.0, 0.0,			// 0
+		1.0, 0.125, 0.0,		// 1
+		0.5, -1.0, 0.0,			// 2
+		-0.5, -1.0, 0.0,		// 3
+		-1.0, 0.125, 0.0,		// 4
+		// 0.0, 1.0, 0.0,
 
 		// Inner Decagon Points
-		0.0, 0.6775, 0.0,		// 7
-		0.375, 0.53625, 0.0,	// 8
-		0.6925, 0.1925, 0.0,	// 9
-		0.6925, -0.225, 0.0,	// 10
-		0.375, -0.625, 0.0,		// 11
-		0.0, -0.75, 0.0,		// 12
-		-0.375, -0.625, 0.0,	// 13
-		-0.6925, -0.225, 0.0,	// 14
-		-0.6925, 0.1925, 0.0,	// 15
-		-0.375, 0.53625, 0.0,	// 16
-		0.0, 0.6775, 0.0,		// 17
+		0.0, 0.6775, 0.0,		// 5
+		0.375, 0.53625, 0.0,	// 6
+		0.6925, 0.1925, 0.0,	// 7
+		0.6925, -0.225, 0.0,	// 8
+		0.375, -0.625, 0.0,		// 9
+		0.0, -0.75, 0.0,		// 10
+		-0.375, -0.625, 0.0,	// 11
+		-0.6925, -0.225, 0.0,	// 12
+		-0.6925, 0.1925, 0.0,	// 13
+		-0.375, 0.53625, 0.0,	// 14
+		// 0.0, 0.6775, 0.0,
 
 		// Inner Pentagon Points
-		0.375, 0.53625, 0.0, 	// 18
-		0.25, 0.4275, 0.0,		// 19
-		-0.25, 0.4275, 0.0,		// 20
-		-0.5, -0.125, 0.0,		// 21
-		0.0, -0.625, 0.0,		// 22
-		0.5, -0.125, 0.0,		// 23
-		0.25, 0.4275, 0.0,		// 24
-
+		// 0.375, 0.53625, 0.0,
+		0.25, 0.4275, 0.0,		// 15
+		-0.25, 0.4275, 0.0,		// 16
+		-0.5, -0.125, 0.0,		// 17
+		0.0, -0.625, 0.0,		// 18
+		0.5, -0.125, 0.0,		// 19
+		// 0.25, 0.4275, 0.0,
 	}
 
-	// Indices = []uint32{
-	// 	
-	// }
+	Indices = []uint32{
+	 	0, 1,
+		1, 2, 
+		2, 3,
+		3, 4,
+		4, 0,
+
+		0, 5,
+		1, 7,
+		2, 9,
+		3, 11,
+		4, 13,
+
+		5, 6,
+		6, 7, 
+		7, 8,
+		8, 9,
+		9, 10,
+		10, 11,
+		11, 12, 
+		12, 13,
+		13, 14,
+		14, 5,
+
+		6, 15,
+		8, 19,
+		10, 18,
+		12, 17,
+		14, 16,
+
+		15, 19,
+		19, 18,
+		18, 17,
+		17, 16,
+		16, 15,
+		
+	}
 
 	Width  = 500	// width of the render window, in pixels
 	Height = 500	// height of the render window, in pixels
@@ -178,10 +212,10 @@ func makeVao(points []float32) uint32 {
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
 
 	// this will be needed later for the indices array that tells the GPU what draw order I want to use
-	// var ebo uint32
-	// gl.GenBuffers(1, &ebo)
-	// gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
-	// gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(Indices), gl.Ptr(Indices), gl.STATIC_DRAW)
+	var ebo uint32
+	gl.GenBuffers(1, &ebo)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(Indices), gl.Ptr(Indices), gl.STATIC_DRAW)
 
 	// this is used if rasterization is enabled using gl.PointSize(), which allows vertices to be rendered with larger diameters
 	// may end up using it to make the vertices larger than the lines drawn between them, to visually indicate each vertex is a room, and is more important than the paths connecting them
@@ -222,7 +256,7 @@ func draw(vao uint32, window *glfw.Window, program uint32) {
 	gl.UseProgram(program)
 
 	gl.BindVertexArray(vao)
-	gl.DrawArrays(gl.LINE_LOOP, 0, 24)
+	gl.DrawElements(gl.LINES, 60, gl.UNSIGNED_INT, nil)
 	gl.BindVertexArray(0)
 
 	glfw.PollEvents()

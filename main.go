@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"math/rand"
+	// "math/rand"
 	"runtime"
 	"strings"
 	// "sync"
@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Fps       = 60 // frames per second
+	Fps       = 30 // frames per second
 
 	// vertex shader source code, for telling OpenGL where the vertices of each shape will be relative to the center of each cell
 	VertexShaderSource = `
@@ -36,40 +36,26 @@ const (
 )
 
 var (
-	// pre-defined square shape, using two triangles
+	// pre-defined dodecahedron shape, using lines
 	Dodecahedron = []float32{
-		0, 0.618, 1.618,
-		0, -0.618, 1.618,
-		0, -0.618, -1.618,
-		0, 0.618, -1.618,
-
-		1.618, 0, 0.618,
-		-1.618, 0, 0.618,
-		-1.618, 0, -0.618,
-		1.618, 0, -0.618,
-
-		0.618, 1.618, 0,
-		-0.618, 1.618, 0,
-		-0.618, -1.618, 0,
-		0.618, -1.618, 0,
-
-		1, 1, 1,
-		-1, 1, 1,
-		-1, -1, 1,
-		1, -1, 1,
-
-		1, -1, -1,
-		1, 1, -1,
-		-1, 1, -1,
-		-1, -1, -1,
+		0.0, 1.0, 0.0,
+		1.0, 0.1, 0.0,
+		0.5, -1.0, 0.0,
+		-0.5, -1.0, 0.0,
+		-1.0, 0.1, 0.0,
+		0.0, 1.0, 0.0,
 	}
+
+	// Indices = []uint32{
+	// 	
+	// }
 
 	Width  = 500	// width of the render window, in pixels
 	Height = 500	// height of the render window, in pixels
 
 	// 9*9 grid for a total of 81 cells
-	Rows   = 9		// cell count along the width of the window
-	Cols   = 9		// cell count along the height of the window
+	// Rows   = 9		// cell count along the width of the window
+	// Cols   = 9		// cell count along the height of the window
 )
 
 func main() {
@@ -83,9 +69,10 @@ func main() {
 	for !window.ShouldClose() {	// while the window is not closed
 		t := time.Now()
 	
-		draw(window, program)
+		vao := makeVao(Dodecahedron)	// this creates and returns the vertex array object (vao) for drawing
+		draw(vao, window, program)		// this function takes the shader program and vao and draws the shape (pentagon right now)
 
-		time.Sleep(time.Second/time.Duration(Fps) - time.Since(t))
+		time.Sleep(time.Second/time.Duration(Fps) - time.Since(t))	// this locks the framerate of the game, currently at 30fps
 	}
 }
 
@@ -132,29 +119,52 @@ func initOpenGL() uint32 {
 	}
 
 	// creates a full shader, called a program (since a shader is just a program that's ran on the GPU) by attaching the VertexShader and FragmentShader to it
-	prog := gl.CreateProgram()
-	gl.AttachShader(prog, vertexShader)
-	gl.AttachShader(prog, fragmentShader)
+	prog := gl.CreateProgram()	// creates a new program object that will be used by the GPU
+	gl.AttachShader(prog, vertexShader)	// attaches the vertex shader to the program object
+	gl.AttachShader(prog, fragmentShader)	// attaches the fragment shader to the program object
 	gl.LinkProgram(prog)	// links the shader program to the buffer for the GPU's use
 	return prog
 }
 
 // makeVao initializes and returns a vertex array from the points provided.
-func makeVao(points []float32) {
+func makeVao(points []float32) uint32 {
+	// creates a vertex buffer object (vbo), which will hold the vertex array object (vao) needed to map the vertices to the render window
 	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, 20*len(points), gl.Ptr(points), gl.STATIC_DRAW)
+	gl.GenBuffers(1, &vbo)	// tells the GPU to treat buffer 1 as a vbo
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)	// binds the vbo to the vbo buffer in the GPU
+	// 4*len(points) approximates the size (in bytes) of the vertex array, and STATIC_DRAW means it will be uploaded to the GPU once but drawn multiple times
+	// may change to a STREAM_DRAW since, once the dodecahedron is drawn, it doesn't need to be re-drawn at any point in time since it won't change, though ClearColor may still clear it out, yet to see
+	gl.BufferData(gl.ARRAY_BUFFER, 4*len(points), gl.Ptr(points), gl.STATIC_DRAW)
 
+	// creates the vertex array object (vao) that will be stored inside of the vbo
 	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-	gl.EnableVertexAttribArray(0)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.VertexAttribPointerWithOffset(0, 4, gl.FLOAT, false, 3*4, 0)
+	gl.GenVertexArrays(1, &vao)	// tells the GPU to create a vertex array out of the data stored in the vertex buffer at buffer 1
+	gl.BindVertexArray(vao)	// binds (or uploads) the vao to the vertex buffer
+	gl.EnableVertexAttribArray(0)	// swaps the vertex array in the vertex buffer to buffer 0, which is the primary buffer the GPU reads from
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)	// binds the vao and the vbo together (I think? Anyone correct me if I'm wrong about anything here)
+	
+	/* 
+	First argument can be used to send data to the shader if you want to allow vertices to be added through input
+	Second argument specifies how many values there are for each vertex, in our case, 3 (X, Y, Z, though Z won't be used, it's still needed)
+		In the case that vertices are added through input, this needs to match what's in the vertex shader (2 for vec2, 3 for vec3, 4 for vec4)
+	Third argument specifies the data type of each component piece of the input
+	Fourth argument specifies if input should be normalized in the case they aren't floating point inputs
+	Fifth argument specifies the stride (or amount of data in between each vertex) in bytes (0 for us since there is no data between each vertex to skip over)
+	Final argument specifies the offset, or where in the vao the reading of the vertices begins, as a byte pointer (0 since the vertices start at the beginning of the vao) */
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
 
-	gl.Enable(gl.PROGRAM_POINT_SIZE)
-	gl.ClearColor(0.0, 0.0, 0.0, 1.0)
+	// this will be needed later for the indices array that tells the GPU what draw order I want to use
+	// var ebo uint32
+	// gl.GenBuffers(1, &ebo)
+	// gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
+	// gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(Indices), gl.Ptr(Indices), gl.STATIC_DRAW)
+
+	// this is used if rasterization is enabled using gl.PointSize(), which allows vertices to be rendered with larger diameters
+	// may end up using it to make the vertices larger than the lines drawn between them, to visually indicate each vertex is a room, and is more important than the paths connecting them
+	// gl.Enable(gl.PROGRAM_POINT_SIZE)
+	gl.ClearColor(0.0, 0.0, 0.0, 1.0)	//	clears the color buffers (r, g, b, a) and replaces them with the specified input. Needed to 'refresh' the screen between each draw call
+
+	return vao
 }
 
 // compileShader will send the shader source code to the GPU for compilation on the GPU (shaders handle vertex points of drawn objects as well as their color)
@@ -183,9 +193,13 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 
 // draw clears anything that's on the screen before drawing new objects
 // Cannot parallelize draws as OpenGL requires operations to happen on a single thread
-func draw(window *glfw.Window, program uint32) {
+func draw(vao uint32, window *glfw.Window, program uint32) {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.UseProgram(program)
+
+	gl.BindVertexArray(vao)
+	gl.DrawArrays(gl.LINE_LOOP, 0, 6)
+	gl.BindVertexArray(0)
 
 	glfw.PollEvents()
 	window.SwapBuffers()

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	// "math/rand"
+	"math/rand"
 	"runtime"
 	"strings"
 	// "sync"
@@ -16,6 +16,7 @@ import (
 const (
 	Fps       = 60 // frames per second
 
+	// vertex shader source code, for telling OpenGL where the vertices of each shape will be relative to the center of each cell
 	VertexShaderSource = `
         #version 410
         in vec3 vp;
@@ -24,6 +25,7 @@ const (
         }
     ` + "\x00"
 
+	// fragment shader source code, tells OpenGL what color the shape that's drawn with the vertex shader will be
 	FragmentShaderSource = `
         #version 410
         out vec4 frag_colour;
@@ -34,33 +36,54 @@ const (
 )
 
 var (
-	Square = []float32{
-		-0.5, 0.5, 0, // top   X, Y, Z
-		-0.5, -0.5, 0, // left  X, Y, Z
-		0.5, -0.5, 0, // right X, Y, Z
+	// pre-defined square shape, using two triangles
+	Dodecahedron = []float32{
+		0, 0.618, 1.618,
+		0, -0.618, 1.618,
+		0, -0.618, -1.618,
+		0, 0.618, -1.618,
 
-		0.5, -0.5, 0,
-		0.5, 0.5, 0,
-		-0.5, 0.5, 0,
+		1.618, 0, 0.618,
+		-1.618, 0, 0.618,
+		-1.618, 0, -0.618,
+		1.618, 0, -0.618,
+
+		0.618, 1.618, 0,
+		-0.618, 1.618, 0,
+		-0.618, -1.618, 0,
+		0.618, -1.618, 0,
+
+		1, 1, 1,
+		-1, 1, 1,
+		-1, -1, 1,
+		1, -1, 1,
+
+		1, -1, -1,
+		1, 1, -1,
+		-1, 1, -1,
+		-1, -1, -1,
 	}
-	Width  = 500
-	Height = 500
-	Rows   = 50
-	Cols   = 50
+
+	Width  = 500	// width of the render window, in pixels
+	Height = 500	// height of the render window, in pixels
+
+	// 9*9 grid for a total of 81 cells
+	Rows   = 9		// cell count along the width of the window
+	Cols   = 9		// cell count along the height of the window
 )
 
 func main() {
-	runtime.LockOSThread()
+	runtime.LockOSThread()	// main OS thread has to be locked for OpenGL rendering, though threading is possible for anything not involving OpenGL
 
-	window := initGlfw()
-	defer glfw.Terminate()
+	window := initGlfw()	// initiate the render window
+	defer glfw.Terminate()	// tells the program to close the window when it reaches the end of the main function
 
-	program := initOpenGL()
+	program := initOpenGL()	// create the shader by combining the vertex and fragment shaders
 
-	for !window.ShouldClose() {
+	for !window.ShouldClose() {	// while the window is not closed
 		t := time.Now()
 	
-		// draw(cells, window, program)
+		draw(window, program)
 
 		time.Sleep(time.Second/time.Duration(Fps) - time.Since(t))
 	}
@@ -78,7 +101,7 @@ func initGlfw() *glfw.Window {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)	// tells GLFW to use the default configuration settings
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)	// tells GLFW that this program will be compatible with newer versions of OpenGL (I think?)
 
-	window, err := glfw.CreateWindow(Width, Height, "Conway's Game of Life", nil, nil)	// creates the window
+	window, err := glfw.CreateWindow(Width, Height, "Hunt the Wumpus", nil, nil)	// creates the window
 	if err != nil {
 		panic(err)
 	}
@@ -117,20 +140,21 @@ func initOpenGL() uint32 {
 }
 
 // makeVao initializes and returns a vertex array from the points provided.
-func makeVao(points []float32) uint32 {
+func makeVao(points []float32) {
 	var vbo uint32
 	gl.GenBuffers(1, &vbo)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(points), gl.Ptr(points), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, 20*len(points), gl.Ptr(points), gl.STATIC_DRAW)
 
 	var vao uint32
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 	gl.EnableVertexAttribArray(0)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
+	gl.VertexAttribPointerWithOffset(0, 4, gl.FLOAT, false, 3*4, 0)
 
-	return vao
+	gl.Enable(gl.PROGRAM_POINT_SIZE)
+	gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 }
 
 // compileShader will send the shader source code to the GPU for compilation on the GPU (shaders handle vertex points of drawn objects as well as their color)
@@ -159,16 +183,10 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 
 // draw clears anything that's on the screen before drawing new objects
 // Cannot parallelize draws as OpenGL requires operations to happen on a single thread
-// func draw(cells [][]*Cell, window *glfw.Window, program uint32) {
-// 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-// 	gl.UseProgram(program)
+func draw(window *glfw.Window, program uint32) {
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	gl.UseProgram(program)
 
-// 	for x := range cells {
-// 		for _, c := range cells[x] {
-// 			c.Draw()
-// 		}
-// 	}
-
-// 	glfw.PollEvents()
-// 	window.SwapBuffers()
-// }
+	glfw.PollEvents()
+	window.SwapBuffers()
+}

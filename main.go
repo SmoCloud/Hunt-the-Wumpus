@@ -9,8 +9,8 @@ import (
 	// "sync"
 	"time"
 
-	"github.com/go-gl/gl/v4.1-core/gl"	// Import the OpenGL implementation for Go, used for graphics rendering
-	"github.com/go-gl/glfw/v3.1/glfw"	// Import the GLFW implementation for Go, simplifies creating a window with OpenGL
+	"github.com/go-gl/gl/v4.6-core/gl"	// Import the OpenGL implementation for Go, used for graphics rendering
+	"github.com/go-gl/glfw/v3.3/glfw"	// Import the GLFW implementation for Go, simplifies creating a window with OpenGL
 )
 
 const (
@@ -105,6 +105,8 @@ var (
 		17, 16,
 		16, 15,
 	}
+
+	isFullscreen = true // window starts in windowed mode, but for first toggle, this must be set true
 )
 
 func main() {
@@ -129,32 +131,22 @@ func main() {
 	// code found by searching 'allow swapping between fullscreen and windowed mode opengl glfw golang'
 	window.SetPos((videoMode.Width - 800) / 2, (videoMode.Height - 800) / 2)
 
-	// will track if render window is in fullscreen mode
-	// isFullscreen := false
-
-	// Set a key callback to toggle fullscreen
-	// window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	// 	if key == glfw.KeyF11 && action == glfw.Press {
-	// 		if isFullscreen {
-	// 			// switch to windowed mode
-	// 			w.SetSize(videoMode.Width, videoMode.Height)
-	// 		} else {
-	// 			w.
-	// 		}
-	// 	}
-	// })
-
-	isFullscreen := false
 	for !window.ShouldClose() {	// while the window is not closed
 		t := time.Now()
 	
+		// This code took a lot of research to get to, ultimately pieces of it were each sourced from different places
+		// I realized the version of glfw and OpenGL I was using weren't the most recent and some of the functions
+		// I needed to do this were only in the most recent versions, so I had to update from OpenGL 4.1 to 4.6
+		// and Glfw 3.1 to 3.3
+		// searched 'golang SetPrimaryMonitor toggle fullscreen modern opengl glfw'
+		// searched 'opengl glfw golang key callback to toggle fullscreen'
+		// 'https://www.glfw.org/docs/3.3/input_guide.html#input_key'
+		// 'https://www.glfw.org/docs/latest/group__window.html#ga81c76c418af80a1cce7055bccb0ae0a7' were the most helpful
+
+		window.SetKeyCallback(keyCallback)
+
 		vao := makeVao(Dodecahedron)	// this creates and returns the vertex array object (vao) for drawing
 		draw(vao, window, program)		// this function takes the shader program and vao and draws the shape (pentagon right now)
-
-		if window.GetKey(glfw.KeyF11) == glfw.Press {
-			isFullscreen = !isFullscreen
-			window = toggleFullscreen(window, mainMonitor, videoMode)
-		}
 
 		time.Sleep(time.Second/time.Duration(Fps) - time.Since(t))	// this locks the framerate of the game, currently at 30fps
 	}
@@ -293,14 +285,23 @@ func draw(vao uint32, window *glfw.Window, program uint32) {
 	window.SwapBuffers()
 }
 
-func toggleFullscreen(w *glfw.Window, monitor *glfw.Monitor, mode *glfw.VidMode) *glfw.Window {
-	w.Destroy()
-
-	newWindow, err := glfw.CreateWindow(mode.Width, mode.Height, "Fullscreen Wumpus", monitor, nil)
-	if err != nil {
-		panic(err)
+func keyCallback(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {	// this code will be useful for any other keypresses I want to implement
+	if action == glfw.Press && key == glfw.KeyF11 {
+		toggleFullscreen(w)
 	}
-	newWindow.MakeContextCurrent()
+}
 
-	return newWindow
+func toggleFullscreen(w *glfw.Window) {
+	// if isFullscreen is true, set the monitor reference to the current monitor and update the viewport so the draw ratio is correct
+	monitor := glfw.GetPrimaryMonitor()
+	mode := monitor.GetVideoMode()
+	if isFullscreen {
+		w.SetMonitor(monitor, 0, 0, mode.Width, mode.Height, mode.RefreshRate)
+		gl.Viewport(0, 0, int32(mode.Width), int32(mode.Height))
+
+	} else {
+		w.SetMonitor(nil, (mode.Width - 800) / 2, (mode.Height - 800) / 2, 800, 800, mode.RefreshRate)
+		gl.Viewport(0, 0, int32(800), int32(800))
+	}
+	isFullscreen = !isFullscreen
 }

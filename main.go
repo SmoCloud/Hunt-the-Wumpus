@@ -15,6 +15,7 @@ import (
 
 const (
 	Fps       = 30 // frames per second
+	Radius	  = 0.2
 
 	// vertex shader source code, for telling OpenGL where the vertices of each shape will be relative to the center of each cell
 	VertexShaderSource = `
@@ -40,11 +41,12 @@ var (
 	// Calculations are based on 0.075 increments
 	Dodecahedron = []float32{
 		// Outer Pentagon points
-		0.0, 1.0, 0.0,			// 0
-		1.0, 0.125, 0.0,		// 1
-		0.5, -1.0, 0.0,			// 2
-		-0.5, -1.0, 0.0,		// 3
-		-1.0, 0.125, 0.0,		// 4
+								// indices of the vertices
+		0.0, 0.965, 0.0,		// 0
+		0.965, 0.125, 0.0,		// 1
+		0.5, -0.965, 0.0,		// 2
+		-0.5, -0.965, 0.0,		// 3
+		-0.965, 0.125, 0.0,		// 4
 		// 0.0, 1.0, 0.0,
 
 		// Inner Decagon Points
@@ -58,19 +60,16 @@ var (
 		-0.6925, -0.225, 0.0,	// 12
 		-0.6925, 0.1925, 0.0,	// 13
 		-0.375, 0.53625, 0.0,	// 14
-		// 0.0, 0.6775, 0.0,
 
 		// Inner Pentagon Points
-		// 0.375, 0.53625, 0.0,
 		0.25, 0.4275, 0.0,		// 15
 		-0.25, 0.4275, 0.0,		// 16
 		-0.5, -0.125, 0.0,		// 17
 		0.0, -0.625, 0.0,		// 18
 		0.5, -0.125, 0.0,		// 19
-		// 0.25, 0.4275, 0.0,
 	}
 
-	Indices = []uint32{
+	Indices = []uint32{	// these are the endpoints for each line that's drawn with gl.DrawElements
 	 	0, 1,
 		1, 2, 
 		2, 3,
@@ -105,7 +104,6 @@ var (
 		18, 17,
 		17, 16,
 		16, 15,
-		
 	}
 
 	Width  = 500	// width of the render window, in pixels
@@ -230,33 +228,36 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)	// creates the shader of either type vertex or fragment
 
 	csources, free := gl.Strs(source)	// re-types the shader source from a string type to a *uint8 type for use by the GPU
-	gl.ShaderSource(shader, 1, csources, nil)
-	free()
-	gl.CompileShader(shader)
+	gl.ShaderSource(shader, 1, csources, nil)	// tells OpenGL what the shader source code is
+	free()	// honestly not sure why free needs to be called
+	gl.CompileShader(shader)	// compiles the shader source code on the GPU
 
 	var status int32
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
-	if status == gl.FALSE {
+	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)	// makes sure the shader source code compiles successfully
+	if status == gl.FALSE {	// status will store gl.FALSE if the compilation was unsuccessful
 		var logLength int32
-		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
+		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)	// this grabs paramaters from the shader source code
 
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
+		log := strings.Repeat("\x00", int(logLength+1))	// this divides the two shaders (vertex and fragment) apart
+		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))	// gets the log error message from the GPU about the shader compilation, where the error was
 
-		return 0, fmt.Errorf("failed to compile %v: %v", source, log)
+		return 0, fmt.Errorf("failed to compile %v: %v", source, log)	// prints the GPU's compilation log to the CPU console window
 	}
 
-	return shader, nil
+	return shader, nil	// if status is gl.TRUE, compilation successful, so return the compiled shader as a program to use in the GPU
 }
 
 // draw clears anything that's on the screen before drawing new objects
 // Cannot parallelize draws as OpenGL requires operations to happen on a single thread
 func draw(vao uint32, window *glfw.Window, program uint32) {
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	gl.UseProgram(program)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)	// clears the drawn colors between each frame
+	gl.UseProgram(program)	// tells the GPU what shader to use in the generated program
 
-	gl.BindVertexArray(vao)
-	gl.DrawElements(gl.LINES, 60, gl.UNSIGNED_INT, nil)
+	gl.BindVertexArray(vao)	// bind the vertex array object to the enabled vertix attribute
+	gl.DrawElements(gl.LINES, 60, gl.UNSIGNED_INT, nil)	// tells the GPU to draw the vertex array object in the order specified by the Indices array that was passed to the ELEMENT_ARRAY_BUFFER
+	
+	gl.PointSize(10.0)	// tells the GPU how large to draw the points
+	gl.DrawArrays(gl.POINTS, 0, 20)	// draws the vertices at the size of what was specified by the line above
 	gl.BindVertexArray(0)
 
 	glfw.PollEvents()

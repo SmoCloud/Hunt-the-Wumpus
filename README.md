@@ -31,6 +31,8 @@ Note    - To install all dependencies when cloning this project, just run 'go mo
 
 - The values used for the coordinates were calculated in 0.075 increments. I really just played with them, changing them in those increments, until I got something that resembled what I wanted (a pentagon inside of a decagon inside of a pentagon).
 
+- Redrawing the vertices in the VBO using drawArrays and specifying them with gl.POINTS and setting gl.PointSize to 10.0 allows the points to be drawn larger than the lines themselves
+
 # Design
 - The design of the map came from the image provided under the Development tab on the wikipedia page for Hunt The Wumpus, that shows the different vertices of a dodecahedron as each room (https://en.wikipedia.org/wiki/Hunt_the_Wumpus).
 

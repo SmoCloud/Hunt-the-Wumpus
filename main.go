@@ -105,13 +105,6 @@ var (
 		17, 16,
 		16, 15,
 	}
-
-	Width  = 500	// width of the render window, in pixels
-	Height = 500	// height of the render window, in pixels
-
-	// 9*9 grid for a total of 81 cells
-	// Rows   = 9		// cell count along the width of the window
-	// Cols   = 9		// cell count along the height of the window
 )
 
 func main() {
@@ -121,12 +114,47 @@ func main() {
 	defer glfw.Terminate()	// tells the program to close the window when it reaches the end of the main function
 
 	program := initOpenGL()	// create the shader by combining the vertex and fragment shaders
+	
+	// code found by searching 'fetch desktop screen size golang opengl glfw'
+	// This code gets the size of the current primary monitor in your display settings to allow the window to be rendered at the size of the monitor
+	mainMonitor := glfw.GetPrimaryMonitor()
+	if mainMonitor == nil {
+		panic("Failed to get primary monitor size.")
+	}
+	videoMode := mainMonitor.GetVideoMode()
+	if videoMode == nil {
+		panic("Failed to get the video mode of the primary monitor.")
+	}
 
+	// code found by searching 'allow swapping between fullscreen and windowed mode opengl glfw golang'
+	window.SetPos((videoMode.Width - 800) / 2, (videoMode.Height - 800) / 2)
+
+	// will track if render window is in fullscreen mode
+	// isFullscreen := false
+
+	// Set a key callback to toggle fullscreen
+	// window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+	// 	if key == glfw.KeyF11 && action == glfw.Press {
+	// 		if isFullscreen {
+	// 			// switch to windowed mode
+	// 			w.SetSize(videoMode.Width, videoMode.Height)
+	// 		} else {
+	// 			w.
+	// 		}
+	// 	}
+	// })
+
+	isFullscreen := false
 	for !window.ShouldClose() {	// while the window is not closed
 		t := time.Now()
 	
 		vao := makeVao(Dodecahedron)	// this creates and returns the vertex array object (vao) for drawing
 		draw(vao, window, program)		// this function takes the shader program and vao and draws the shape (pentagon right now)
+
+		if window.GetKey(glfw.KeyF11) == glfw.Press {
+			isFullscreen = !isFullscreen
+			window = toggleFullscreen(window, mainMonitor, videoMode)
+		}
 
 		time.Sleep(time.Second/time.Duration(Fps) - time.Since(t))	// this locks the framerate of the game, currently at 30fps
 	}
@@ -144,10 +172,11 @@ func initGlfw() *glfw.Window {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)	// tells GLFW to use the default configuration settings
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)	// tells GLFW that this program will be compatible with newer versions of OpenGL (I think?)
 
-	window, err := glfw.CreateWindow(Width, Height, "Hunt the Wumpus", nil, nil)	// creates the window
+	window, err := glfw.CreateWindow(800, 800, "Hunt the Wumpus", nil, nil)	// creates the window
 	if err != nil {
 		panic(err)
 	}
+	
 	window.MakeContextCurrent()	// makes the window the current context to display
 	glfw.SwapInterval(glfw.True)
 
@@ -262,4 +291,16 @@ func draw(vao uint32, window *glfw.Window, program uint32) {
 
 	glfw.PollEvents()
 	window.SwapBuffers()
+}
+
+func toggleFullscreen(w *glfw.Window, monitor *glfw.Monitor, mode *glfw.VidMode) *glfw.Window {
+	w.Destroy()
+
+	newWindow, err := glfw.CreateWindow(mode.Width, mode.Height, "Fullscreen Wumpus", monitor, nil)
+	if err != nil {
+		panic(err)
+	}
+	newWindow.MakeContextCurrent()
+
+	return newWindow
 }

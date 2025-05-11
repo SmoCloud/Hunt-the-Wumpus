@@ -33,6 +33,10 @@ Note    - To install all dependencies when cloning this project, just run 'go mo
 
 - Redrawing the vertices in the VBO using drawArrays and specifying them with gl.POINTS and setting gl.PointSize to 10.0 allows the points to be drawn larger than the lines themselves
 
+- Using a keyCallback, I was able to implement the ability for the render window to swap between fullscreen and windowed modes
+
+- 
+
 # Design
 - The design of the map came from the image provided under the Development tab on the wikipedia page for Hunt The Wumpus, that shows the different vertices of a dodecahedron as each room (https://en.wikipedia.org/wiki/Hunt_the_Wumpus).
 

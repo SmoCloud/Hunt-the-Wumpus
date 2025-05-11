@@ -145,6 +145,8 @@ func main() {
 
 		window.SetKeyCallback(keyCallback)
 
+		log.Println(window.GetCursorPos())
+
 		vao := makeVao(Dodecahedron)	// this creates and returns the vertex array object (vao) for drawing
 		draw(vao, window, program)		// this function takes the shader program and vao and draws the shape (pentagon right now)
 

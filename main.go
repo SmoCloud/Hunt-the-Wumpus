@@ -112,10 +112,10 @@ var (
 func main() {
 	runtime.LockOSThread()	// main OS thread has to be locked for OpenGL rendering, though threading is possible for anything not involving OpenGL
 
-	window := initGlfw()	// initiate the render window
+	window := InitGlfw()	// initiate the render window
 	defer glfw.Terminate()	// tells the program to close the window when it reaches the end of the main function
 
-	program := initOpenGL()	// create the shader by combining the vertex and fragment shaders
+	program := InitOpenGL()	// create the shader by combining the vertex and fragment shaders
 	
 	// code found by searching 'fetch desktop screen size golang opengl glfw'
 	// This code gets the size of the current primary monitor in your display settings to allow the window to be rendered at the size of the monitor
@@ -143,19 +143,19 @@ func main() {
 		// 'https://www.glfw.org/docs/3.3/input_guide.html#input_key'
 		// 'https://www.glfw.org/docs/latest/group__window.html#ga81c76c418af80a1cce7055bccb0ae0a7' were the most helpful
 
-		window.SetKeyCallback(keyCallback)
+		window.SetKeyCallback(KeyCallback)
 
 		log.Println(window.GetCursorPos())
 
-		vao := makeVao(Dodecahedron)	// this creates and returns the vertex array object (vao) for drawing
-		draw(vao, window, program)		// this function takes the shader program and vao and draws the shape (pentagon right now)
+		vao := MakeVao(Dodecahedron)	// this creates and returns the vertex array object (vao) for drawing
+		DrawGame(vao, window, program)		// this function takes the shader program and vao and draws the shape (pentagon right now)
 
 		time.Sleep(time.Second/time.Duration(Fps) - time.Since(t))	// this locks the framerate of the game, currently at 30fps
 	}
 }
 
 // initGlfw initializes glfw and returns a Window object that can be used to render graphics.
-func initGlfw() *glfw.Window {
+func InitGlfw() *glfw.Window {
 	if err := glfw.Init(); err != nil {
 		panic(err)
 	}
@@ -178,7 +178,7 @@ func initGlfw() *glfw.Window {
 }
 
 // initOpenGL initializes OpenGL and returns an initialized program
-func initOpenGL() uint32 {
+func InitOpenGL() uint32 {
 	if err := gl.Init(); err != nil {	// this if structure initializes in the first step and then does the check whether to run the conditional code in the second
 		panic(err)
 	}
@@ -186,13 +186,13 @@ func initOpenGL() uint32 {
 	log.Println("OpenGL version", version)	// log seems to do the same thing as fmt, though I think log might work better with logging to a file, may create a log file
 
 	// compiles the vertex shader, telling the GPU what shape will be drawn through its vertices and their locations relative to the center of the cell
-	vertexShader, err := compileShader(VertexShaderSource, gl.VERTEX_SHADER)
+	vertexShader, err := CompileShader(VertexShaderSource, gl.VERTEX_SHADER)
 	if err != nil {
 		panic(err)
 	}
 
 	// compiles the fragment shader, telling the GPU what color the shape drawn in the cell will be
-	fragmentShader, err := compileShader(FragmentShaderSource, gl.FRAGMENT_SHADER)
+	fragmentShader, err := CompileShader(FragmentShaderSource, gl.FRAGMENT_SHADER)
 	if err != nil {
 		panic(err)
 	}
@@ -206,7 +206,7 @@ func initOpenGL() uint32 {
 }
 
 // makeVao initializes and returns a vertex array from the points provided.
-func makeVao(points []float32) uint32 {
+func MakeVao(points []float32) uint32 {
 	// creates a vertex buffer object (vbo), which will hold the vertex array object (vao) needed to map the vertices to the render window
 	var vbo uint32
 	gl.GenBuffers(1, &vbo)	// tells the GPU to treat buffer 1 as a vbo
@@ -247,7 +247,7 @@ func makeVao(points []float32) uint32 {
 }
 
 // compileShader will send the shader source code to the GPU for compilation on the GPU (shaders handle vertex points of drawn objects as well as their color)
-func compileShader(source string, shaderType uint32) (uint32, error) {
+func CompileShader(source string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)	// creates the shader of either type vertex or fragment
 
 	csources, free := gl.Strs(source)	// re-types the shader source from a string type to a *uint8 type for use by the GPU
@@ -272,7 +272,7 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 
 // draw clears anything that's on the screen before drawing new objects
 // Cannot parallelize draws as OpenGL requires operations to happen on a single thread
-func draw(vao uint32, window *glfw.Window, program uint32) {
+func DrawGame(vao uint32, window *glfw.Window, program uint32) {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)	// clears the drawn colors between each frame
 	gl.UseProgram(program)	// tells the GPU what shader to use in the generated program
 
@@ -287,13 +287,13 @@ func draw(vao uint32, window *glfw.Window, program uint32) {
 	window.SwapBuffers()
 }
 
-func keyCallback(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {	// this code will be useful for any other keypresses I want to implement
+func KeyCallback(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {	// this code will be useful for any other keypresses I want to implement
 	if action == glfw.Press && key == glfw.KeyF11 {
-		toggleFullscreen(w)
+		ToggleFullscreen(w)
 	}
 }
 
-func toggleFullscreen(w *glfw.Window) {
+func ToggleFullscreen(w *glfw.Window) {
 	// if isFullscreen is true, set the monitor reference to the current monitor and update the viewport so the draw ratio is correct
 	monitor := glfw.GetPrimaryMonitor()
 	mode := monitor.GetVideoMode()

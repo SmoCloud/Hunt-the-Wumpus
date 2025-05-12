@@ -23,7 +23,7 @@ jobs:
     - name: Run headless test
       uses: coactions/setup-xvfb@v1
       with:
-        run: npm test
+        run: x.org_application_binary
     - name: Set up Go
       uses: actions/setup-go@v5
       with:

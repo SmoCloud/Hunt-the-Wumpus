@@ -12,18 +12,10 @@ on:
 jobs:
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-11-arm
     steps:
     - uses: actions/checkout@v4
     - name: Install Ubuntu dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get upgrade
-        sudo apt-get install golang gcc libgl1-mesa-dev xorg-dev x11-common libx11-dev xvfb -y
-    - name: Run headless test
-      uses: coactions/setup-xvfb@v1
-      with:
-        run: x.org_application_binary
     - name: Set up Go
       uses: actions/setup-go@v5
       with:

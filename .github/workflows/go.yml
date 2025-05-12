@@ -18,6 +18,15 @@ jobs:
     # - name: Install Windows dependencies
     #   run: |
     #     winget install --id NVIDIA.GeForceDriver -e --accept-package-agreements --accept-source-agreements
+    - name: Set up C/C++ Compiler
+      id: setup-compiler
+      uses: rlalik/setup-cpp-compiler@master
+      with:
+        compiler: gcc-latest
+    - name: Verify GCC Installation
+      run: |
+        gcc --version
+        g++ --version
     - name: Set up Go
       uses: actions/setup-go@v5
       with:

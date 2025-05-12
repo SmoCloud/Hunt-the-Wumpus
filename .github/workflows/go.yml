@@ -14,14 +14,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: Install Ubuntu dependencies
       run: |
-        npm install
         sudo apt-get update
         sudo apt-get upgrade
         sudo apt-get install golang gcc libgl1-mesa-dev xorg-dev x11-common libx11-dev xvfb -y
-        xvfb-run --auto-servernum npm test
+    - name: Run headless test
+      uses: coactions/setup-xvfb@v1
+      with:
+        run: npm test
     - name: Set up Go
       uses: actions/setup-go@v5
       with:

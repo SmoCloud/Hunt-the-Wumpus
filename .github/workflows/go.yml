@@ -24,7 +24,8 @@ jobs:
         go get .
         sudo apt-get update
         sudo apt-get upgrade
-        sudo apt-get install xorg -y
+        sudo apt-get install gcc libgl1-mesa-dev xorg-dev -y
+        export PKG_CONFIG_PATH=${locate pkgconfig/gl.pc}
     - name: Build
       run: go build -v ./...
     - name: Test with the Go CLI

@@ -12,21 +12,14 @@ on:
 jobs:
 
   build:
-    runs-on: windows-11-amd
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    # - name: Install Windows dependencies
-    #   run: |
-    #     winget install --id NVIDIA.GeForceDriver -e --accept-package-agreements --accept-source-agreements
-    - name: Set up C/C++ Compiler
-      id: setup-compiler
-      uses: rlalik/setup-cpp-compiler@master
-      with:
-        compiler: gcc-latest
-    - name: Verify GCC Installation
+    - name: Install Ubuntu dependencies
       run: |
-        gcc --version
-        g++ --version
+        sudo apt-get update
+        sudo apt-get upgrade
+        sudo apt-get install golang gcc libgl1-mesa-dev xorg-dev x11-common libx11-dev -y
     - name: Set up Go
       uses: actions/setup-go@v5
       with:

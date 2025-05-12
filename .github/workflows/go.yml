@@ -27,7 +27,13 @@ jobs:
         sudo apt-get install -y gcc-aarch64-linux-gnu libx11-dev libgl1-mesa-dev xorg-dev xvfb
         PKG_PATH=$(locate pkgconfig/gl.pc | head -n 1)
         export PKG_CONFIG_PATH=$(dirname $PKG_PATH)
+    - name: Start virtual display
+      run: |
+        sudo Xvfb :99 -screen 0 1024x768x16 &
+        export DISPLAY=:99
     - name: Build
       run: go build -v ./...
     - name: Test with the Go CLI
-      run: go test -v ./...
+      run: |
+        export DISPLAY=:99
+        go test -v ./...

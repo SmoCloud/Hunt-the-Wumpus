@@ -15,17 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Install Ubuntu dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get upgrade
+        sudo apt-get install golang gcc libgl1-mesa-dev xorg-dev -y
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: '1.24.x'
-    - name: Install dependencies
-      run: |
-        go get .
-        sudo apt-get update
-        sudo apt-get upgrade
-        sudo apt-get install gcc libgl1-mesa-dev xorg-dev -y
-        export PKG_CONFIG_PATH=${locate pkgconfig/gl.pc}
+    - name: Install Golang dependencies
+      run: go get .
     - name: Build
       run: go build -v ./...
     - name: Test with the Go CLI

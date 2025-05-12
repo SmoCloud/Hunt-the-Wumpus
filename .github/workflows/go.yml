@@ -16,7 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install Windows dependencies
-      run: winget install --id NVIDIA.GeForceDriver -e --accept-package-agreements --accept-source-agreements
+      run: |
+        winget install Microsoft.DesktopAppInstaller
+        winget install --id NVIDIA.GeForceDriver -e --accept-package-agreements --accept-source-agreements
     - name: Set up Go
       uses: actions/setup-go@v5
       with:

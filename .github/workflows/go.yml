@@ -15,7 +15,6 @@ jobs:
     runs-on: windows-11-arm
     steps:
     - uses: actions/checkout@v4
-    - name: Install Ubuntu dependencies
     - name: Set up Go
       uses: actions/setup-go@v5
       with:

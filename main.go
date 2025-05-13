@@ -13,6 +13,10 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"	// Import the GLFW implementation for Go, simplifies creating a window with OpenGL
 )
 
+func init() {
+	runtime.LockOSThread()	// main OS thread has to be locked for OpenGL rendering, though threading is possible for anything not involving OpenGL
+}
+
 const (
 	Fps       = 30 // frames per second
 	Radius	  = 0.2
@@ -110,8 +114,6 @@ var (
 )
 
 func main() {
-	runtime.LockOSThread()	// main OS thread has to be locked for OpenGL rendering, though threading is possible for anything not involving OpenGL
-
 	window := InitGlfw()	// initiate the render window
 	defer glfw.Terminate()	// tells the program to close the window when it reaches the end of the main function
 
@@ -145,13 +147,20 @@ func main() {
 
 		window.SetKeyCallback(KeyCallback)
 
-		log.Println(window.GetCursorPos())
+		cursorX, cursorY := window.GetCursorPos()
+
+		if !isFullscreen {
+			if (cursorX >= 0 && cursorX <= 800) && (cursorY >= 0 && cursorY <= 800) {
+				
+			}
+		}
 
 		vao := MakeVao(Dodecahedron)	// this creates and returns the vertex array object (vao) for drawing
 		DrawGame(vao, window, program)		// this function takes the shader program and vao and draws the shape (pentagon right now)
 
 		time.Sleep(time.Second/time.Duration(Fps) - time.Since(t))	// this locks the framerate of the game, currently at 30fps
 	}
+	runtime.UnlockOSThread()
 }
 
 // initGlfw initializes glfw and returns a Window object that can be used to render graphics.
